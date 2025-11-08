@@ -13,6 +13,10 @@ import {
 import { ExpedientesService } from './expedientes.service';
 import { Expediente, EstadoExpediente } from './expediente.entity';
 import { DocumentoRef } from 'src/documentos/documento-ref.entity';
+import { CreateExpedienteDto } from './dto/create-expediente.dto';
+import { UpdateExpedienteDto } from './dto/update-expediente.dto';
+import { CreateDocumentoRefDto } from './dto/create-documento-ref.dto';
+import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('expedientes')
 export class ExpedientesController {
@@ -20,16 +24,7 @@ export class ExpedientesController {
 
   // Crear expediente
   @Post()
-  async crearExpediente(
-    @Body() cuerpo: {
-      titulo: string;
-      descripcion?: string;
-      estado?: EstadoExpediente;
-      fecha_inicio?: string; // 'YYYY-MM-DD'
-      fecha_cierre?: string; // 'YYYY-MM-DD'
-      id_cliente: number;
-    },
-  ): Promise<Expediente> {
+  async crearExpediente(@Body() cuerpo: CreateExpedienteDto): Promise<Expediente> {
     if (!cuerpo.titulo || cuerpo.titulo.trim() === '') {
       throw new Error('El titulo es obligatorio');
     }
@@ -58,6 +53,8 @@ export class ExpedientesController {
   // Listar todos (con filtros y paginación opcional)
   // GET /expedientes?limit=25&offset=0&id_cliente=1&estado=ABIERTO&q=demanda
   @Get()
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 25 })
+  @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
   async listarExpedientes(
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
@@ -65,8 +62,15 @@ export class ExpedientesController {
     @Query('estado') estado?: EstadoExpediente,
     @Query('q') q?: string,
   ): Promise<Expediente[]> {
-    const lim = limit ? Math.min(200, Math.max(1, Number(limit))) : undefined;
-    const off = offset ? Math.max(0, Number(offset)) : undefined;
+    const DEFAULT_LIMIT = 25;
+    const MAX_LIMIT = 200;
+    const DEFAULT_OFFSET = 0;
+
+    const rawLimit = limit !== undefined ? Number(limit) || DEFAULT_LIMIT : DEFAULT_LIMIT;
+    const lim = Math.min(MAX_LIMIT, Math.max(1, rawLimit));
+
+    const rawOffset = offset !== undefined ? Number(offset) || DEFAULT_OFFSET : DEFAULT_OFFSET;
+    const off = Math.max(0, rawOffset);
     const idCli = id_cliente ? Number(id_cliente) : undefined;
 
     return this.servicio.listarTodos({
@@ -82,9 +86,9 @@ export class ExpedientesController {
   @Patch(':id_expediente')
   async actualizarExpediente(
     @Param('id_expediente', ParseIntPipe) id_expediente: number,
-    @Body() cuerpo: Partial<Expediente>,
+    @Body() cuerpo: UpdateExpedienteDto,
   ): Promise<Expediente> {
-    return this.servicio.actualizarParcial(id_expediente, cuerpo);
+    return this.servicio.actualizarParcial(id_expediente, cuerpo as Partial<Expediente>);
   }
 
   // Eliminar
@@ -101,7 +105,7 @@ export class ExpedientesController {
   @Post(':id_expediente/documentos')
   async agregarDocumentoRef(
     @Param('id_expediente', ParseIntPipe) id_expediente: number,
-    @Body() body: { doc_id_storage: string; titulo?: string; tipo?: string },
+    @Body() body: CreateDocumentoRefDto,
   ): Promise<DocumentoRef> {
     return this.servicio.agregarDocumentoRef(id_expediente, body);
   }

@@ -12,20 +12,15 @@ import {
 } from '@nestjs/common';
 import { PlazosService } from './plazos.service';
 import { Plazo } from './plazo.entity';
+import { CreatePlazoDto } from './dto/create-plazo.dto';
+import { UpdatePlazoDto } from './dto/update-plazo.dto';
 
 @Controller()
 export class PlazosController {
   constructor(private readonly servicioPlazos: PlazosService) {}
 
   @Post('plazos')
-  async crear(
-    @Body()
-    cuerpo: {
-      id_expediente: number;
-      descripcion: string;
-      fecha_vencimiento: string; // ISO (yyyy-mm-dd)
-    },
-  ): Promise<Plazo> {
+  async crear(@Body() cuerpo: CreatePlazoDto): Promise<Plazo> {
     if (!cuerpo.descripcion || cuerpo.descripcion.trim() === '') {
       throw new Error('La descripción es obligatoria');
     }
@@ -68,9 +63,9 @@ export class PlazosController {
   @Patch('plazos/:id_plazo')
   async actualizar(
     @Param('id_plazo', ParseIntPipe) id_plazo: number,
-    @Body() cuerpo: Partial<Plazo>,
+    @Body() cuerpo: UpdatePlazoDto,
   ): Promise<Plazo> {
-    return await this.servicioPlazos.actualizarParcial(id_plazo, cuerpo);
+    return await this.servicioPlazos.actualizarParcial(id_plazo, cuerpo as Partial<Plazo>);
   }
 
   @Delete('plazos/:id_plazo')

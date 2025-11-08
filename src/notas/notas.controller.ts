@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import { NotasService } from './notas.service';
 import { Nota } from './nota.entity';
+import { CreateNotaDto } from './dto/create-nota.dto';
+import { UpdateNotaDto } from './dto/update-nota.dto';
 
 @Controller()
 export class NotasController {
@@ -18,14 +20,7 @@ export class NotasController {
 
   // Crear nota para un expediente
   @Post('notas')
-  async crear(
-    @Body()
-    cuerpo: {
-      id_expediente: number;
-      contenido: string;
-      tipo?: string | null;
-    },
-  ): Promise<Nota> {
+  async crear(@Body() cuerpo: CreateNotaDto): Promise<Nota> {
     if (!cuerpo.contenido || cuerpo.contenido.trim() === '') {
       throw new Error('El contenido es obligatorio');
     }
@@ -58,9 +53,9 @@ export class NotasController {
   @Patch('notas/:id_nota')
   async actualizar(
     @Param('id_nota', ParseIntPipe) id_nota: number,
-    @Body() cuerpo: Partial<Nota>,
+    @Body() cuerpo: UpdateNotaDto,
   ): Promise<Nota> {
-    return await this.servicioNotas.actualizarParcial(id_nota, cuerpo);
+    return await this.servicioNotas.actualizarParcial(id_nota, cuerpo as Partial<Nota>);
   }
 
   // Eliminar una nota

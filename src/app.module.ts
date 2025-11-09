@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TerminusModule } from '@nestjs/terminus';
+
+import { HealthController } from './health/health.controller';
 
 import { ClientesModule } from './clientes/clientes.module';
 import { ExpedientesModule } from './expedientes/expedientes.module';
@@ -20,11 +23,11 @@ import { AuthClienteModule } from './auth-cliente/auth-cliente.module';
         type: 'postgres',
         host: cfg.get<string>('DB_HOST'),
         port: parseInt(cfg.get<string>('DB_PORT') || '5432', 10),
-        username: cfg.get<string>('DB_USERNAME'),
-        password: cfg.get<string>('DB_PASSWORD'),
+        username: cfg.get<string>('DB_USERNAME') || cfg.get<string>('DB_USER'),
+        password: cfg.get<string>('DB_PASSWORD') || cfg.get<string>('DB_PASS'),
         database: cfg.get<string>('DB_NAME'),
         autoLoadEntities: true,   // así no listas entities manualmente
-        synchronize: true       // true solo en dev si no usas migraciones
+        synchronize: (cfg.get<string>('NODE_ENV') || process.env.NODE_ENV) !== 'production',
       }),
     }),
 
@@ -35,7 +38,9 @@ import { AuthClienteModule } from './auth-cliente/auth-cliente.module';
     UsuariosModule,
     AuthModule,
     ClienteCredencial,
-    AuthClienteModule
+    AuthClienteModule,
+    TerminusModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

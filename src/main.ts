@@ -17,6 +17,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
 
   // Swagger setup - documentación en /docs
   const swaggerConfig = new DocumentBuilder()

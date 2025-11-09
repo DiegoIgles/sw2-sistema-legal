@@ -1,16 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Nota } from './nota.entity';
 import { Expediente } from 'src/expedientes/expediente.entity';
+import { RealtimeGateway } from 'src/realtime/realtime.gateway';
 
 @Injectable()
 export class NotasService {
+  private readonly logger = new Logger(NotasService.name);
+
   constructor(
     @InjectRepository(Nota)
     private readonly repoNota: Repository<Nota>,
     @InjectRepository(Expediente)
     private readonly repoExpediente: Repository<Expediente>,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   async crearNota(datos: {
@@ -18,17 +22,45 @@ export class NotasService {
     contenido: string;
     tipo?: string | null;
   }): Promise<Nota> {
+    // 1) Validamos expediente (tu entity ya trae cliente eager)
     const expediente = await this.repoExpediente.findOne({
       where: { id_expediente: datos.id_expediente },
     });
     if (!expediente) throw new NotFoundException('Expediente no encontrado');
 
+    // 2) Creamos y guardamos la nota
     const nueva = this.repoNota.create({
       contenido: datos.contenido,
       tipo: datos.tipo ?? null,
       expediente,
     });
-    return await this.repoNota.save(nueva);
+    const guardada = await this.repoNota.save(nueva);
+
+    // Log de creación (siempre)
+    this.logger.log(
+      `Nota creada id=${guardada.id_nota} exp=${expediente.id_expediente} cliente=${expediente.cliente?.id_cliente}`,
+    );
+
+    // 3) Emitimos por sockets a la sala del cliente (el gateway loguea clients en la sala)
+    try {
+      const idCliente = expediente.cliente?.id_cliente;
+      if (idCliente) {
+        await this.realtime.emitNotaCreada(idCliente, {
+          id_expediente: expediente.id_expediente,
+          id_nota: guardada.id_nota,
+          contenido: guardada.contenido,
+          tipo: guardada.tipo ?? '',
+          fecha_registro: guardada.fecha_registro,
+        });
+      } else {
+        this.logger.warn('Expediente sin cliente asociado; no se emite socket');
+      }
+    } catch (e) {
+      // No romper el flujo si falla la emisión
+      this.logger.warn(`No se pudo emitir evento de nota: ${e?.message || e}`);
+    }
+
+    return guardada;
   }
 
   async obtenerPorId(id_nota: number): Promise<Nota | null> {

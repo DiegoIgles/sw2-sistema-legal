@@ -9,6 +9,7 @@ services:
       POSTGRES_USER: legal_user
       POSTGRES_PASSWORD: legal_pass
       POSTGRES_DB: legal_db
+      POSTGRES_HOST_AUTH_METHOD: md5   # 👈 IMPORTANTE
     ports:
       - "5433:5432"
     volumes:

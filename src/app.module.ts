@@ -13,6 +13,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { ClienteCredencial } from './auth-cliente/cliente-credencial.entity';
 import { AuthClienteModule } from './auth-cliente/auth-cliente.module';
+import { RealtimeModule } from './realtime/realtime.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), // lee .env
@@ -40,6 +41,7 @@ import { AuthClienteModule } from './auth-cliente/auth-cliente.module';
     ClienteCredencial,
     AuthClienteModule,
     TerminusModule,
+    RealtimeModule
   ],
   controllers: [HealthController],
 })

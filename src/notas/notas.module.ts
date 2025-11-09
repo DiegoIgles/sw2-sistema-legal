@@ -4,9 +4,9 @@ import { Nota } from './nota.entity';
 import { NotasService } from './notas.service';
 import { NotasController } from './notas.controller';
 import { Expediente } from 'src/expedientes/expediente.entity';
-
+import { RealtimeModule } from 'src/realtime/realtime.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([Nota, Expediente])],
+  imports: [TypeOrmModule.forFeature([Nota, Expediente]), RealtimeModule],
   controllers: [NotasController],
   providers: [NotasService],
 })

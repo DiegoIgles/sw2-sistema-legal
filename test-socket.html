@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Socket Test</title></head>
+  <body>
+    <h3>Socket Test cliente:2</h3>
+    <pre id="out"></pre>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+      const out = document.getElementById('out');
+      function log(...args){ out.textContent += args.join(' ') + '\n'; console.log(...args); }
+
+      // ⚠️ Cambia la URL a tu backend
+      const URL = 'http://localhost:3000';
+
+      // Nos conectamos indicando el id_cliente = 2
+      const socket = io(URL, {
+        transports: ['websocket'],
+        query: { id_cliente: '2' },
+      });
+
+      socket.on('connect', () => log('✅ conectado:', socket.id));
+      socket.on('disconnect', (r) => log('🔌 desconectado:', r));
+
+      // Escuchar el evento que emite tu backend
+      socket.on('nota:creada', (payload) => {
+        log('📨 nota:creada =>', JSON.stringify(payload));
+      });
+    </script>
+  </body>
+</html>

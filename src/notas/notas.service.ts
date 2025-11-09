@@ -1,3 +1,4 @@
+// ...existing code...
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -87,5 +88,14 @@ export class NotasService {
 
   async eliminar(id_nota: number): Promise<void> {
     await this.repoNota.delete(id_nota);
+  }
+  // Listar todas las notas de un cliente (por id_cliente)
+  async listarPorCliente(id_cliente: number): Promise<Nota[]> {
+    // Busca todas las notas cuyos expedientes pertenecen al cliente
+    return this.repoNota.find({
+      where: { expediente: { cliente: { id_cliente } } },
+      order: { id_nota: 'DESC' },
+      relations: { expediente: true },
+    });
   }
 }

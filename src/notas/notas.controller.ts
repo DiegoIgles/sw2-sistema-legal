@@ -8,7 +8,10 @@ import {
   Param,
   ParseIntPipe,
   NotFoundException,
+  Headers,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { NotasService } from './notas.service';
 import { Nota } from './nota.entity';
 import { CreateNotaDto } from './dto/create-nota.dto';
@@ -16,7 +19,33 @@ import { UpdateNotaDto } from './dto/update-nota.dto';
 
 @Controller()
 export class NotasController {
-  constructor(private readonly servicioNotas: NotasService) {}
+  constructor(
+    private readonly servicioNotas: NotasService,
+    private readonly jwt: JwtService,
+  ) {}
+  // Listar todas las notas del cliente autenticado
+  @Get('notas/mis')
+  async listarMisNotas(
+    @Headers('authorization') authorization?: string,
+  ): Promise<Nota[]> {
+    if (!authorization) throw new UnauthorizedException('Se requiere Authorization header');
+    const parts = authorization.split(' ');
+    const token = parts.length === 2 && /^Bearer$/i.test(parts[0]) ? parts[1] : parts[0];
+
+    let payload: any;
+    try {
+      payload = this.jwt.verify(token);
+    } catch (err) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    if (!payload || payload.tipo !== 'CLIENTE' || typeof payload.sub !== 'number') {
+      throw new UnauthorizedException('Token de cliente requerido');
+    }
+
+    const idCli = payload.sub as number;
+    return this.servicioNotas.listarPorCliente(idCli);
+  }
 
   // Crear nota para un expediente
   @Post('notas')

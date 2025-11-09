@@ -9,7 +9,10 @@ import {
   ParseIntPipe,
   NotFoundException,
   Query,
+  Headers,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { ExpedientesService } from './expedientes.service';
 import { Expediente, EstadoExpediente } from './expediente.entity';
 import { DocumentoRef } from 'src/documentos/documento-ref.entity';
@@ -20,7 +23,10 @@ import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('expedientes')
 export class ExpedientesController {
-  constructor(private readonly servicio: ExpedientesService) {}
+  constructor(
+    private readonly servicio: ExpedientesService,
+    private readonly jwt: JwtService,
+  ) {}
 
   // Crear expediente
   @Post()
@@ -39,6 +45,55 @@ export class ExpedientesController {
   }
 
   // Obtener por id
+  // GET /expedientes/mis -> usa el token del cliente para devolver solo sus expedientes
+  // Colocado antes de las rutas dinámicas para que 'mis' no sea interpretado como id_expediente
+  @Get('mis')
+  async listarMisExpedientes(
+    @Headers('authorization') authorization?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('estado') estado?: EstadoExpediente,
+    @Query('q') q?: string,
+  ): Promise<Expediente[]> {
+    if (!authorization) throw new UnauthorizedException('Se requiere Authorization header');
+    const parts = authorization.split(' ');
+    const token = parts.length === 2 && /^Bearer$/i.test(parts[0]) ? parts[1] : parts[0];
+
+    let payload: any;
+    try {
+      payload = this.jwt.verify(token);
+    } catch (err) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    // validar que sea token de cliente
+    if (!payload || payload.tipo !== 'CLIENTE' || typeof payload.sub !== 'number') {
+      throw new UnauthorizedException('Token de cliente requerido');
+    }
+
+    const idCli = payload.sub as number;
+
+    const DEFAULT_LIMIT = 25;
+    const MAX_LIMIT = 200;
+    const DEFAULT_OFFSET = 0;
+
+    const rawLimit = limit !== undefined ? Number(limit) || DEFAULT_LIMIT : DEFAULT_LIMIT;
+    const lim = Math.min(MAX_LIMIT, Math.max(1, rawLimit));
+
+    const rawOffset = offset !== undefined ? Number(offset) || DEFAULT_OFFSET : DEFAULT_OFFSET;
+    const off = Math.max(0, rawOffset);
+
+    return this.servicio.listarTodos({
+      limit: lim,
+      offset: off,
+      id_cliente: idCli,
+      estado,
+      q,
+    });
+  }
+
+  // Obtener por id
+  // Rutas dinámicas sin regex (Nest/Swagger/path-to-regexp evitan patrones complejos aquí)
   @Get(':id_expediente')
   async obtenerExpediente(
     @Param('id_expediente', ParseIntPipe) id_expediente: number,
@@ -81,6 +136,7 @@ export class ExpedientesController {
       q,
     });
   }
+
 
   // Actualizar parcial
   @Patch(':id_expediente')

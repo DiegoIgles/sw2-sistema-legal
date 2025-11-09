@@ -35,7 +35,7 @@ async function bootstrap() {
 
   // ✅ Habilitar CORS para tu frontend (CRA en :3001)
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:8081'], // agrega otros orígenes si los necesitas
+    origin: ['http://localhost:3001', 'http://localhost:8081', 'http://localhost:8082', 'http://localhost:8083', 'http://192.168.100.252:8083','http://192.168.100.252:8082' ], // agrega otros orígenes si los necesitas
     methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type','Authorization'],
     credentials: false, // pon true solo si usaras cookies/sesiones

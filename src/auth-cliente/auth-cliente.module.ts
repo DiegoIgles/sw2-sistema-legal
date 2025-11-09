@@ -30,5 +30,6 @@ import { ClienteCredencial } from './cliente-credencial.entity';
   ],
   controllers: [AuthClienteController],
   providers: [AuthClienteService],
+  exports: [JwtModule],
 })
 export class AuthClienteModule {}

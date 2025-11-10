@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: expedientes-service
+  namespace: expedientes
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: "expedientes-lb"
+spec:
+  type: LoadBalancer
+  selector:
+    app: expedientes-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  sessionAffinity: ClientIP

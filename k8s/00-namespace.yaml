@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: expedientes
+  labels:
+    app: expedientes-microservice
+    environment: production

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: expedientes-config
+  namespace: expedientes
+data:
+  PORT: "3000"
+  NODE_ENV: "development"  # Para que TypeORM cree las tablas automáticamente
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "expedientes_db"
+  CORS_ORIGIN: "*"

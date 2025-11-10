@@ -69,4 +69,21 @@ export class PlazosService {
   async eliminar(id_plazo: number): Promise<void> {
     await this.repoPlazo.delete(id_plazo);
   }
+  async listarTodos(params: {
+  page: number;
+  limit: number;
+  cumplido?: boolean;
+}): Promise<[Plazo[], number]> {
+  const where: any = {};
+  if (params.cumplido !== undefined) where.cumplido = params.cumplido;
+
+  return this.repoPlazo.findAndCount({
+    where,
+    order: { fecha_vencimiento: 'ASC' },
+    relations: ['expediente'], // quítalo si no necesitas el expediente
+    skip: (params.page - 1) * params.limit,
+    take: params.limit,
+  });
+}
+
 }

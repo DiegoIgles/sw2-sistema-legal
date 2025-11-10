@@ -14,10 +14,10 @@ import { PlazosService } from './plazos.service';
 import { Plazo } from './plazo.entity';
 import { CreatePlazoDto } from './dto/create-plazo.dto';
 import { UpdatePlazoDto } from './dto/update-plazo.dto';
-
+import { DefaultValuePipe } from '@nestjs/common';
 @Controller()
 export class PlazosController {
-  constructor(private readonly servicioPlazos: PlazosService) {}
+  constructor(private readonly servicioPlazos: PlazosService) { }
 
   @Post('plazos')
   async crear(@Body() cuerpo: CreatePlazoDto): Promise<Plazo> {
@@ -33,13 +33,31 @@ export class PlazosController {
       descripcion: cuerpo.descripcion,
       fecha_vencimiento: new Date(cuerpo.fecha_vencimiento),
     });
-    }
+  }
 
   @Get('plazos/:id_plazo')
   async obtener(@Param('id_plazo', ParseIntPipe) id_plazo: number): Promise<Plazo> {
     const plazo = await this.servicioPlazos.obtenerPorId(id_plazo);
     if (!plazo) throw new NotFoundException('Plazo no encontrado');
     return plazo;
+  }
+  //todos los plazos
+  @Get('plazos')
+  async listarTodos(
+    @Query('page', new DefaultValuePipe(1)) page: number,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
+    @Query('cumplido') cumplido?: 'true' | 'false',
+  ): Promise<{ data: Plazo[]; total: number; page: number; limit: number }> {
+    const filtroCumplido =
+      cumplido === 'true' ? true : cumplido === 'false' ? false : undefined;
+
+    const [data, total] = await this.servicioPlazos.listarTodos({
+      page: Number(page),
+      limit: Number(limit),
+      cumplido: filtroCumplido,
+    });
+
+    return { data, total, page: Number(page), limit: Number(limit) };
   }
 
   @Get('expedientes/:id_expediente/plazos')
@@ -72,4 +90,5 @@ export class PlazosController {
   async eliminar(@Param('id_plazo', ParseIntPipe) id_plazo: number): Promise<void> {
     return await this.servicioPlazos.eliminar(id_plazo);
   }
+
 }
